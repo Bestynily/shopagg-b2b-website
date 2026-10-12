@@ -5,7 +5,7 @@ module.exports = {
     './app/Controllers/**/*.php',
     './app/Core/**/*.php',
     './app/Plugins/**/*.php',
-    './assets/admin/**/*.js'
+    './assets/admin/base.js'
   ],
   theme: {
     extend: {
