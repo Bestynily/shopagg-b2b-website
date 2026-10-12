@@ -11,10 +11,15 @@ $filters = $filters ?? ['search' => '', 'type' => 'all', 'sort' => 'date_desc'];
 $searchKeyword = (string)($filters['search'] ?? '');
 $typeFilter = (string)($filters['type'] ?? 'all');
 $sortFilter = (string)($filters['sort'] ?? 'date_desc');
+$allowedSorts = ['date_desc', 'date_asc', 'name_asc', 'name_desc', 'size_asc', 'size_desc', 'type_asc', 'type_desc'];
+if (!in_array($sortFilter, $allowedSorts, true)) {
+    $sortFilter = 'date_desc';
+}
 $parentDir = $currentDir === '' ? '' : dirname($currentDir);
 $parentDir = $parentDir === '.' ? '' : $parentDir;
 
-$buildMediaUrl = static function (string $dir) use ($searchKeyword, $typeFilter, $sortFilter): string {
+$buildMediaUrl = static function (string $dir, ?string $sort = null) use ($searchKeyword, $typeFilter, $sortFilter): string {
+    $effectiveSort = $sort ?? $sortFilter;
     $query = ['dir' => $dir];
     if ($searchKeyword !== '') {
         $query['search'] = $searchKeyword;
@@ -22,12 +27,36 @@ $buildMediaUrl = static function (string $dir) use ($searchKeyword, $typeFilter,
     if ($typeFilter !== 'all') {
         $query['type'] = $typeFilter;
     }
-    if ($sortFilter !== 'date_desc') {
-        $query['sort'] = $sortFilter;
+    if ($effectiveSort !== 'date_desc') {
+        $query['sort'] = $effectiveSort;
     }
 
     return url('/admin/media?' . http_build_query($query));
 };
+
+$getSortState = static function (string $field) use ($sortFilter): array {
+    $ascending = $field . '_asc';
+    $descending = $field . '_desc';
+    $active = $sortFilter === $ascending || $sortFilter === $descending;
+    $direction = $sortFilter === $ascending ? 'asc' : 'desc';
+
+    $next = $active
+        ? ($direction === 'asc' ? $descending : $ascending)
+        : ($field === 'date' ? $descending : $ascending);
+
+    return [
+        'active' => $active,
+        'direction' => $direction,
+        'next' => $next,
+        'next_direction' => $next === $ascending ? 'asc' : 'desc',
+        'aria' => $active ? ($direction === 'asc' ? 'ascending' : 'descending') : 'none',
+    ];
+};
+
+$nameSort = $getSortState('name');
+$dateSort = $getSortState('date');
+$sizeSort = $getSortState('size');
+$typeSort = $getSortState('type');
 
 $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl): string {
     if ($nodes === []) {
@@ -168,14 +197,75 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
     <input type="hidden" name="parent_dir" value="<?= h($currentDir) ?>">
 </form>
 
-<div id="page-media-edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+<div id="page-media-preview-modal" class="page-media-modal fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="page-media-preview-heading" aria-hidden="true" tabindex="-1">
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div class="min-w-0">
+                <h2 class="text-lg font-semibold text-slate-900" id="page-media-preview-heading">预览 / 属性</h2>
+                <p class="mt-1 truncate text-sm text-slate-500" id="page-media-preview-subtitle">查看媒体文件及其详细信息</p>
+            </div>
+            <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" data-media-preview-close aria-label="关闭预览">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+            <div class="border-b border-slate-200 bg-slate-50 p-4 sm:p-6 lg:border-b-0 lg:border-r">
+                <div class="page-media-preview-box" id="page-media-preview-box"></div>
+            </div>
+            <div class="page-media-preview-meta p-5 sm:p-6">
+                <div class="page-media-preview-row">
+                    <span>标题</span>
+                    <strong id="page-media-preview-title"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>原始文件名</span>
+                    <strong id="page-media-preview-name"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>存储文件名</span>
+                    <strong id="page-media-preview-storage"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>类型</span>
+                    <strong id="page-media-preview-type"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>所在目录</span>
+                    <strong id="page-media-preview-directory"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>大小 / 尺寸</span>
+                    <strong id="page-media-preview-size"></strong>
+                </div>
+                <div class="page-media-preview-row">
+                    <span>修改时间</span>
+                    <strong id="page-media-preview-date"></strong>
+                </div>
+                <div class="space-y-2 border-t border-slate-100 pt-4">
+                    <label class="text-xs font-semibold text-slate-500" for="page-media-preview-path">文件路径</label>
+                    <div class="flex gap-2">
+                        <input class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 outline-none" id="page-media-preview-path" type="text" readonly>
+                        <button type="button" class="inline-flex items-center justify-center rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-600" data-copy-target="#page-media-preview-path">复制</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end border-t border-slate-200 px-5 py-3 sm:px-6">
+            <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" data-media-preview-close>关闭</button>
+        </div>
+    </div>
+</div>
+
+<div id="page-media-edit-modal" class="page-media-modal fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
     <div class="w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">编辑媒体信息</h2>
                 <p class="mt-1 text-sm text-slate-500">可修改媒体库展示用的标题和原始文件名，不会改动服务器上的物理文件。</p>
             </div>
-            <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" data-media-edit-close onclick="window.closePageMediaEditModal && window.closePageMediaEditModal()" aria-label="关闭">
+            <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" data-media-edit-close aria-label="关闭">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -210,7 +300,7 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
             </div>
 
             <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-5">
-                <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" data-media-edit-close onclick="window.closePageMediaEditModal && window.closePageMediaEditModal()">取消</button>
+                <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" data-media-edit-close>取消</button>
                 <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-600">保存修改</button>
             </div>
         </form>
@@ -278,6 +368,7 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
 
         <form method="get" action="<?= url('/admin/media') ?>" class="explorer-filter-bar">
             <input type="hidden" name="dir" value="<?= h($currentDir) ?>">
+            <input type="hidden" name="sort" value="<?= h($sortFilter) ?>">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div class="relative flex-1">
                     <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
@@ -287,14 +378,6 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
                     <option value="all" <?= $typeFilter === 'all' ? 'selected' : '' ?>>全部</option>
                     <option value="image" <?= $typeFilter === 'image' ? 'selected' : '' ?>>图片</option>
                     <option value="video" <?= $typeFilter === 'video' ? 'selected' : '' ?>>视频</option>
-                </select>
-                <select name="sort" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100">
-                    <option value="date_desc" <?= $sortFilter === 'date_desc' ? 'selected' : '' ?>>最新上传</option>
-                    <option value="date_asc" <?= $sortFilter === 'date_asc' ? 'selected' : '' ?>>最早上传</option>
-                    <option value="name_asc" <?= $sortFilter === 'name_asc' ? 'selected' : '' ?>>文件名 A-Z</option>
-                    <option value="name_desc" <?= $sortFilter === 'name_desc' ? 'selected' : '' ?>>文件名 Z-A</option>
-                    <option value="type_asc" <?= $sortFilter === 'type_asc' ? 'selected' : '' ?>>类型升序</option>
-                    <option value="type_desc" <?= $sortFilter === 'type_desc' ? 'selected' : '' ?>>类型降序</option>
                 </select>
                 <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100">搜索</button>
             </div>
@@ -335,15 +418,35 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
                 </div>
             <?php endif; ?>
 
-            <div class="explorer-file-header">
+            <div class="explorer-file-header" role="row">
                 <label class="explorer-check-cell">
                     <input type="checkbox" id="page-media-toggle-all">
                 </label>
-                <div>名称</div>
-                <div>类型</div>
-                <div>大小</div>
-                <div>修改时间</div>
-                <div>操作</div>
+                <div role="columnheader" aria-sort="<?= $nameSort['aria'] ?>">
+                    <a class="explorer-sort-button <?= $nameSort['active'] ? 'is-active' : '' ?>" href="<?= h($buildMediaUrl($currentDir, $nameSort['next'])) ?>" title="按名称<?= $nameSort['next_direction'] === 'asc' ? '升序' : '降序' ?>排列">
+                        <span>名称</span>
+                        <i class="fas <?= $nameSort['active'] ? ($nameSort['direction'] === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down') : 'fa-sort' ?> explorer-sort-indicator" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div role="columnheader" aria-sort="<?= $dateSort['aria'] ?>">
+                    <a class="explorer-sort-button <?= $dateSort['active'] ? 'is-active' : '' ?>" href="<?= h($buildMediaUrl($currentDir, $dateSort['next'])) ?>" title="按修改时间<?= $dateSort['next_direction'] === 'asc' ? '升序' : '降序' ?>排列">
+                        <span>修改时间</span>
+                        <i class="fas <?= $dateSort['active'] ? ($dateSort['direction'] === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down') : 'fa-sort' ?> explorer-sort-indicator" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div role="columnheader" aria-sort="<?= $sizeSort['aria'] ?>">
+                    <a class="explorer-sort-button <?= $sizeSort['active'] ? 'is-active' : '' ?>" href="<?= h($buildMediaUrl($currentDir, $sizeSort['next'])) ?>" title="按大小<?= $sizeSort['next_direction'] === 'asc' ? '升序' : '降序' ?>排列">
+                        <span>大小</span>
+                        <i class="fas <?= $sizeSort['active'] ? ($sizeSort['direction'] === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down') : 'fa-sort' ?> explorer-sort-indicator" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div role="columnheader" aria-sort="<?= $typeSort['aria'] ?>">
+                    <a class="explorer-sort-button <?= $typeSort['active'] ? 'is-active' : '' ?>" href="<?= h($buildMediaUrl($currentDir, $typeSort['next'])) ?>" title="按类型<?= $typeSort['next_direction'] === 'asc' ? '升序' : '降序' ?>排列">
+                        <span>类型</span>
+                        <i class="fas <?= $typeSort['active'] ? ($typeSort['direction'] === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down') : 'fa-sort' ?> explorer-sort-indicator" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div role="columnheader">操作</div>
             </div>
 
             <div class="explorer-file-list" id="page-media-file-list">
@@ -389,10 +492,13 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
                                 <span>标题：<?= h(((string)($file['title'] ?? '')) !== '' ? (string)$file['title'] : '未设置') ?> · 存储名：<?= h($file['storage_name'] ?? $file['name']) ?></span>
                             </div>
                         </div>
-                        <div><?= $file['is_video'] ? '视频' : ($file['is_image'] ? '图片' : '文件') ?></div>
-                        <div><?= h($file['size_formatted']) ?></div>
                         <div><?= h($file['date']) ?></div>
+                        <div><?= h($file['size_formatted']) ?></div>
+                        <div><?= $file['is_video'] ? '视频' : ($file['is_image'] ? '图片' : '文件') ?></div>
                         <div class="explorer-actions" >
+                            <button type="button" class="js-page-media-preview-btn inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700" title="预览与属性" aria-label="预览与属性">
+                                <i class="fas fa-eye text-xs"></i>
+                            </button>
                             <button
                                 type="button"
                                 class="js-page-media-edit-btn inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100 hover:text-sky-700"
@@ -400,7 +506,6 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
                                 data-edit-title="<?= h((string)($file['title'] ?? '')) ?>"
                                 data-edit-original-name="<?= h($file['original_name'] ?: $file['name']) ?>"
                                 data-edit-storage-name="<?= h($file['storage_name'] ?? $file['name']) ?>"
-                                onclick="window.openPageMediaEditModal && window.openPageMediaEditModal(this)"
                                 title="编辑文件信息">
                                 <i class="fas fa-pen text-xs"></i>
                             </button>
@@ -416,55 +521,6 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
             </div>
         </section>
 
-        <aside class="explorer-preview-pane">
-            <div class="explorer-pane-title">预览 / 属性</div>
-            <div class="explorer-preview-empty" id="explorerPreviewEmpty">
-                <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"><i class="fas fa-image text-xl"></i></span>
-                <p class="mt-4 text-sm leading-6">选择一个文件后，这里会显示预览和属性。</p>
-            </div>
-            <div class="explorer-preview-panel hidden" id="explorerPreviewPanel">
-                <div class="explorer-preview-box" id="explorerPreviewBox"></div>
-                <div class="explorer-preview-meta">
-                    <div class="explorer-meta-row">
-                        <span>标题</span>
-                        <strong id="explorerPreviewTitle"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>原始文件名</span>
-                        <strong id="explorerPreviewName"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>存储文件名</span>
-                        <strong id="explorerPreviewStorage"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>类型</span>
-                        <strong id="explorerPreviewType"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>所在目录</span>
-                        <strong id="explorerPreviewDirectory"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>大小 / 尺寸</span>
-                        <strong id="explorerPreviewSize"></strong>
-                    </div>
-                    <div class="explorer-meta-row">
-                        <span>修改时间</span>
-                        <strong id="explorerPreviewDate"></strong>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">路径</label>
-                        <div class="flex gap-2">
-                            <input class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 outline-none" id="explorerPreviewPath" type="text" readonly>
-                            <button type="button" class="inline-flex items-center justify-center rounded-xl bg-sky-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-600" data-copy-target="#explorerPreviewPath">
-                                复制
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <div class="explorer-statusbar">
@@ -474,90 +530,3 @@ $renderTree = static function (array $nodes) use (&$renderTree, $buildMediaUrl):
         <span>总大小 <?= h((string)($currentStats['total_size_formatted'] ?? '0 B')) ?></span>
     </div>
 </div>
-
-<script>
-(function () {
-    function getEditModal() {
-        return document.getElementById('page-media-edit-modal');
-    }
-
-    window.closePageMediaEditModal = function () {
-        var modal = getEditModal();
-        if (!modal) {
-            return;
-        }
-
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-        document.documentElement.classList.remove('media-library-modal-open');
-        document.body.classList.remove('media-library-modal-open');
-    };
-
-    window.openPageMediaEditModal = function (button) {
-        var modal = getEditModal();
-        var pathInput = document.getElementById('page-media-edit-path');
-        var originalNameInput = document.getElementById('page-media-edit-original-name');
-        var titleInput = document.getElementById('page-media-edit-title');
-        var storageName = document.getElementById('page-media-edit-storage-name');
-        var publicPath = document.getElementById('page-media-edit-public-path');
-
-        if (!modal || !button || !pathInput || !originalNameInput || !titleInput || !storageName || !publicPath) {
-            return;
-        }
-
-        pathInput.value = button.getAttribute('data-edit-path') || '';
-        originalNameInput.value = button.getAttribute('data-edit-original-name') || '';
-        titleInput.value = button.getAttribute('data-edit-title') || '';
-        storageName.textContent = button.getAttribute('data-edit-storage-name') || '-';
-        publicPath.textContent = button.getAttribute('data-edit-path') || '-';
-
-        document.documentElement.classList.add('media-library-modal-open');
-        document.body.classList.add('media-library-modal-open');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        originalNameInput.focus();
-        originalNameInput.select();
-    };
-
-    function bindMediaEditModal() {
-        var buttons = document.querySelectorAll('.js-page-media-edit-btn');
-        var closeButtons = document.querySelectorAll('[data-media-edit-close]');
-        var modal = getEditModal();
-        var i = 0;
-
-        for (i = 0; i < buttons.length; i++) {
-            buttons[i].addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                window.openPageMediaEditModal(this);
-            });
-        }
-
-        for (i = 0; i < closeButtons.length; i++) {
-            closeButtons[i].addEventListener('click', window.closePageMediaEditModal);
-        }
-
-        if (modal) {
-            modal.addEventListener('click', function (event) {
-                if (event.target === modal) {
-                    window.closePageMediaEditModal();
-                }
-            });
-        }
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                window.closePageMediaEditModal();
-            }
-        });
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindMediaEditModal);
-        return;
-    }
-
-    bindMediaEditModal();
-})();
-</script>

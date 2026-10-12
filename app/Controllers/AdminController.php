@@ -249,7 +249,7 @@ class AdminController extends Controller {
     }
 
     private function normalizeSettingsTab(string $tab): string {
-        return in_array($tab, ['general', 'company', 'trade', 'media', 'contact', 'translate', 'custom'], true)
+        return in_array($tab, ['general', 'company', 'contact', 'translate', 'custom'], true)
             ? $tab
             : 'general';
     }
@@ -261,8 +261,6 @@ class AdminController extends Controller {
     private function settingsTitle(string $tab): string {
         return match ($this->normalizeSettingsTab($tab)) {
             'company' => '公司资料',
-            'trade' => '贸易能力',
-            'media' => '公司展示',
             'contact' => '联系方式',
             'translate' => '翻译设置',
             'custom' => '自定义代码',
@@ -293,9 +291,6 @@ class AdminController extends Controller {
 
     public function settings(): void {
         $tab = $this->resolveSettingsTab();
-        if (in_array($tab, ['trade', 'media'], true)) {
-            $this->redirect($this->settingsPath('company'));
-        }
         if ($tab === 'custom' && AuthManager::getUserRole() !== 'admin') {
             $this->redirect('/admin');
         }
@@ -350,13 +345,8 @@ class AdminController extends Controller {
             $_POST['site_currency'] = normalize_currency_code((string)($_POST['site_currency'] ?? ''), 'USD');
         }
         
-        // 公司资料合并页与旧公司展示表单的媒体数据。
-        if ($tab === 'media' || ($tab === 'company' && isset($_POST['company_profile_combined']))) {
+        if ($tab === 'company') {
             $this->saveCompanyMediaSettings();
-            if ($tab === 'media') {
-                $this->redirect($this->settingsPath('company'));
-                return;
-            }
         }
 
         if ($tab === 'translate') {
@@ -391,7 +381,6 @@ class AdminController extends Controller {
                 'company_trade_staff', 'company_incoterms', 'company_payment_terms', 'company_lead_time',
                 'company_overseas_agent', 'company_export_year', 'company_nearest_port', 'company_rd_engineers'
             ],
-            'trade' => ['company_main_markets', 'company_trade_staff', 'company_incoterms', 'company_payment_terms', 'company_lead_time', 'company_overseas_agent', 'company_export_year', 'company_nearest_port', 'company_rd_engineers'],
             'contact' => [
                 'company_email', 'company_phone', 'company_address', 'whatsapp',
                 'contact_telegram', 'contact_line', 'contact_vk',
@@ -407,7 +396,7 @@ class AdminController extends Controller {
                 $this->settingModel->set($k, is_array($_POST[$k]) ? json_encode($_POST[$k]) : trim((string)$_POST[$k]));
             }
         }
-        $this->redirect($this->settingsPath(in_array($tab, ['trade', 'media'], true) ? 'company' : $tab));
+        $this->redirect($this->settingsPath($tab));
     }
 
     private function saveCompanyMediaSettings(): void {

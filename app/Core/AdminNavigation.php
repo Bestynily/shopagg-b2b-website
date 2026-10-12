@@ -165,9 +165,7 @@ final class AdminNavigation {
             ['id' => 'app-store-settings', 'section' => 'extensions', 'label' => '商店账户', 'url' => '/admin/app-store/settings', 'icon' => 'user-gear', 'order' => 30, 'admin_only' => true],
 
             ['id' => 'settings-general', 'section' => 'system', 'label' => '常规设置', 'url' => '/admin/settings-general', 'icon' => 'sliders', 'order' => 10, 'permission' => 'settings'],
-            ['id' => 'settings-company', 'section' => 'system', 'label' => '公司信息', 'url' => '/admin/settings-company', 'icon' => 'building', 'order' => 20, 'permission' => 'settings'],
-            ['id' => 'settings-trade', 'section' => 'system', 'label' => '贸易设置', 'url' => '/admin/settings-trade', 'icon' => 'globe', 'order' => 30, 'permission' => 'settings'],
-            ['id' => 'settings-media', 'section' => 'system', 'label' => '媒体设置', 'url' => '/admin/settings-media', 'icon' => 'image', 'order' => 40, 'permission' => 'settings'],
+            ['id' => 'settings-company', 'section' => 'system', 'label' => '公司资料', 'url' => '/admin/settings-company', 'icon' => 'building', 'order' => 20, 'permission' => 'settings'],
             ['id' => 'settings-contact', 'section' => 'system', 'label' => '联系设置', 'url' => '/admin/settings-contact', 'icon' => 'address-book', 'order' => 50, 'permission' => 'settings'],
             ['id' => 'settings-translate', 'section' => 'system', 'label' => '翻译设置', 'url' => '/admin/settings-translate', 'icon' => 'language', 'order' => 60, 'permission' => 'settings'],
             ['id' => 'settings-custom', 'section' => 'system', 'label' => '自定义代码', 'url' => '/admin/settings-custom', 'icon' => 'code', 'order' => 70, 'admin_only' => true],

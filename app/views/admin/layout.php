@@ -190,14 +190,6 @@
                                 <option value="all">全部媒体</option>
                                 <option value="video">视频</option>
                             </select>
-                            <select id="media-library-sort-filter" class="min-w-[150px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                                <option value="date_desc">最新上传</option>
-                                <option value="date_asc">最早上传</option>
-                                <option value="name_asc">文件名 A-Z</option>
-                                <option value="name_desc">文件名 Z-A</option>
-                                <option value="type_asc">类型升序</option>
-                                <option value="type_desc">类型降序</option>
-                            </select>
                         </div>
                     </div>
                     <div id="upload-progress-container" class="mb-4 hidden">
@@ -224,64 +216,37 @@
                                 </div>
                                 <p class="text-xs text-slate-500" id="media-library-current-mode-label">列表视图</p>
                             </div>
-                            <div class="media-library-file-header" id="media-library-file-header">
+                            <div class="media-library-file-header" id="media-library-file-header" role="row">
                                 <div class="media-library-file-col check">
                                     <input type="checkbox" id="media-library-toggle-all">
                                 </div>
-                                <div class="media-library-file-col name">名称</div>
-                                <div class="media-library-file-col type">类型</div>
-                                <div class="media-library-file-col size">大小</div>
-                                <div class="media-library-file-col date">修改时间</div>
+                                <div class="media-library-file-col name" role="columnheader" aria-sort="none">
+                                    <button type="button" class="media-library-sort-button" data-media-library-sort="name" title="按名称排序">
+                                        <span>名称</span>
+                                        <i class="fas fa-sort explorer-sort-indicator" data-sort-icon aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div class="media-library-file-col date" role="columnheader" aria-sort="descending">
+                                    <button type="button" class="media-library-sort-button is-active" data-media-library-sort="date" title="按修改时间排序">
+                                        <span>修改时间</span>
+                                        <i class="fas fa-chevron-down explorer-sort-indicator" data-sort-icon aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div class="media-library-file-col size" role="columnheader" aria-sort="none">
+                                    <button type="button" class="media-library-sort-button" data-media-library-sort="size" title="按大小排序">
+                                        <span>大小</span>
+                                        <i class="fas fa-sort explorer-sort-indicator" data-sort-icon aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                                <div class="media-library-file-col type" role="columnheader" aria-sort="none">
+                                    <button type="button" class="media-library-sort-button" data-media-library-sort="type" title="按类型排序">
+                                        <span>类型</span>
+                                        <i class="fas fa-sort explorer-sort-indicator" data-sort-icon aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div id="media-library-list" class="media-library-file-list"></div>
                         </section>
-                        <aside class="media-library-preview-panel">
-                            <div class="media-library-pane-title">预览 / 属性</div>
-                            <div class="media-library-details" id="media-library-details-empty">
-                                <div class="media-library-details-placeholder">
-                                    <span class="inline-flex h-8 w-8 items-center justify-center text-2xl"><i class="fas fa-image"></i></span>
-                                    <p class="mt-3">选择一个媒体文件后，这里会显示预览和详情。</p>
-                                </div>
-                            </div>
-                            <div class="media-library-details hidden" id="media-library-details-panel">
-                                <div class="media-library-details-preview" id="media-library-details-preview"></div>
-                                <div class="media-library-detail-row">
-                                    <span>标题</span>
-                                    <strong id="media-details-title"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>原始文件名</span>
-                                    <strong id="media-details-original"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>存储文件名</span>
-                                    <strong id="media-details-storage"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>媒体类型</span>
-                                    <strong id="media-details-type"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>所在目录</span>
-                                    <strong id="media-details-directory"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>尺寸/大小</span>
-                                    <strong id="media-details-meta"></strong>
-                                </div>
-                                <div class="media-library-detail-row">
-                                    <span>上传时间</span>
-                                    <strong id="media-details-date"></strong>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400" for="media-details-path">路径</label>
-                                    <div class="flex items-center gap-2">
-                                        <input class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none" type="text" readonly id="media-details-path">
-                                        <button type="button" class="inline-flex items-center justify-center rounded-xl bg-sky-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-600" id="media-details-copy-btn">复制</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </aside>
                     </div>
                     <div class="media-library-window-statusbar">
                         <span id="media-library-selected-count">已选择 0 个文件</span>

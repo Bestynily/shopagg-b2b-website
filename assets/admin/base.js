@@ -36,7 +36,6 @@ window.tailwind.config = {
         search: '',
         type: 'image',
         sort: 'date_desc',
-        activeItem: null,
         currentStats: {
             item_count: 0,
             total_size_formatted: '0 B'
@@ -66,7 +65,7 @@ window.tailwind.config = {
         products: []
     };
 
-    let currentExplorerFile = null;
+    let pageMediaPreviewReturnFocus = null;
 
     function escapeHtmlAttr(value) {
         return String(value || '')
@@ -638,41 +637,6 @@ ${productSelectorThumb(product, 'h-11 w-12')}
         status.textContent = message;
     }
 
-    function updateMediaDetails(item) {
-        const emptyPanel = document.getElementById('media-library-details-empty');
-        const detailsPanel = document.getElementById('media-library-details-panel');
-        const preview = document.getElementById('media-library-details-preview');
-        if (!emptyPanel || !detailsPanel || !preview) {
-            return;
-        }
-
-        if (!item) {
-            emptyPanel.classList.remove('hidden');
-            detailsPanel.classList.add('hidden');
-            preview.innerHTML = '';
-            return;
-        }
-
-        emptyPanel.classList.add('hidden');
-        detailsPanel.classList.remove('hidden');
-
-        const itemUrl = normalizeMediaSelectionUrl(item.public_path || item.url || '');
-        if (item.type === 'video') {
-            preview.innerHTML = `<video controls playsinline preload="metadata"><source src="${escapeHtmlAttr(itemUrl)}"></video>`;
-        } else {
-            preview.innerHTML = `<img src="${escapeHtmlAttr(itemUrl)}" alt="${escapeHtmlAttr(item.name || '')}">`;
-        }
-
-        document.getElementById('media-details-title').textContent = item.title || item.name || '';
-        document.getElementById('media-details-original').textContent = item.original_name || item.name || '';
-        document.getElementById('media-details-storage').textContent = item.storage_name || '';
-        document.getElementById('media-details-type').textContent = item.type === 'video' ? '视频' : (item.type === 'image' ? '图片' : '文件');
-        document.getElementById('media-details-directory').textContent = item.directory ? `/uploads/${item.directory}` : '/uploads';
-        document.getElementById('media-details-meta').textContent = [item.dimensions || '', item.size_formatted || item.size || ''].filter(Boolean).join(' · ') || '-';
-        document.getElementById('media-details-date').textContent = item.date || '';
-        document.getElementById('media-details-path').value = item.public_path || '';
-    }
-
     function resolveMediaSelectionPayload(items) {
         if (mediaLibraryState.options.returnObjects) {
             return mediaLibraryState.multi ? items : (items[0] || null);
@@ -722,6 +686,39 @@ ${productSelectorThumb(product, 'h-11 w-12')}
         if (list) list.classList.toggle('is-tiles', mediaLibraryState.view === 'tiles');
         if (header) header.classList.toggle('hidden', mediaLibraryState.view === 'tiles');
         if (label) label.textContent = mediaLibraryState.view === 'tiles' ? '缩略图视图' : '列表视图';
+        updateMediaLibrarySortHeaders();
+    }
+
+    function updateMediaLibrarySortHeaders() {
+        const labels = {
+            name: '名称',
+            date: '修改时间',
+            size: '大小',
+            type: '类型'
+        };
+
+        document.querySelectorAll('[data-media-library-sort]').forEach((button) => {
+            const field = button.dataset.mediaLibrarySort || '';
+            const ascending = `${field}_asc`;
+            const descending = `${field}_desc`;
+            const active = mediaLibraryState.sort === ascending || mediaLibraryState.sort === descending;
+            const direction = mediaLibraryState.sort === ascending ? 'asc' : 'desc';
+            const nextDirection = active
+                ? (direction === 'asc' ? 'desc' : 'asc')
+                : (field === 'date' ? 'desc' : 'asc');
+            const icon = button.querySelector('[data-sort-icon]');
+            const column = button.closest('[role="columnheader"]');
+
+            button.classList.toggle('is-active', active);
+            button.title = `按${labels[field] || field}${nextDirection === 'asc' ? '升序' : '降序'}排列`;
+            button.setAttribute('aria-label', button.title);
+            column?.setAttribute('aria-sort', active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none');
+
+            if (icon) {
+                icon.classList.remove('fa-sort', 'fa-chevron-up', 'fa-chevron-down');
+                icon.classList.add(active ? (direction === 'asc' ? 'fa-chevron-up' : 'fa-chevron-down') : 'fa-sort');
+            }
+        });
     }
 
     function updateMediaLibraryBatchControls() {
@@ -806,7 +803,6 @@ ${renderNodes(nodes || [])}
         document.querySelectorAll('.js-media-library-item').forEach((element) => {
             const path = element.dataset.path || '';
             element.classList.toggle('is-selected', mediaLibraryState.selectedItems.has(path));
-            element.classList.toggle('is-active', !!(mediaLibraryState.activeItem && mediaLibraryState.activeItem.public_path === path));
             const checkbox = element.querySelector('.js-media-library-selector');
             if (checkbox) {
                 checkbox.checked = mediaLibraryState.selectedItems.has(path);
@@ -816,9 +812,6 @@ ${renderNodes(nodes || [])}
     }
 
     function selectMediaItem(item, immediate = false) {
-        mediaLibraryState.activeItem = item;
-        updateMediaDetails(item);
-
         if (mediaLibraryState.multi) {
             if (mediaLibraryState.selectedItems.has(item.public_path)) {
                 mediaLibraryState.selectedItems.delete(item.public_path);
@@ -863,6 +856,9 @@ ${renderNodes(nodes || [])}
         }
 
         mediaLibraryState.lastPayload = payload;
+        if (payload.filters?.sort) {
+            mediaLibraryState.sort = payload.filters.sort;
+        }
         mediaLibraryState.currentStats = payload.current_stats || {
             item_count: 0,
             total_size_formatted: '0 B'
@@ -885,11 +881,6 @@ ${renderNodes(nodes || [])}
         treeContainer.innerHTML = renderMediaLibraryTree(payload.folder_tree || [], payload.current_directory || '');
         mediaLibraryState.selectedItems = new Map(Array.from(mediaLibraryState.selectedItems.entries()).filter(([path]) => files.some((item) => item.public_path === path)));
 
-        if (mediaLibraryState.activeItem && !files.some((item) => item.public_path === mediaLibraryState.activeItem.public_path)) {
-            mediaLibraryState.activeItem = null;
-            updateMediaDetails(null);
-        }
-
         updateMediaLibraryViewMode();
 
         if (!folders.length && !files.length) {
@@ -899,7 +890,6 @@ ${renderNodes(nodes || [])}
 <p class="mt-3">这个目录下还没有符合条件的媒体文件。</p>
 </div>
 `;
-            updateMediaDetails(null);
             updateMediaLibraryBatchControls();
             return;
         }
@@ -921,8 +911,6 @@ ${renderNodes(nodes || [])}
 `;
                 tile.addEventListener('click', () => {
                     mediaLibraryState.selectedItems.clear();
-                    mediaLibraryState.activeItem = null;
-                    updateMediaDetails(null);
                     renderMediaLibrarySelection();
                 });
                 tile.addEventListener('dblclick', () => {
@@ -969,8 +957,6 @@ ${thumbHtml}
                     });
                     selector.addEventListener('change', (event) => {
                         event.stopPropagation();
-                        mediaLibraryState.activeItem = file;
-                        updateMediaDetails(file);
                         if (!mediaLibraryState.multi) {
                             mediaLibraryState.selectedItems = selector.checked ? new Map([[file.public_path, file]]) : new Map();
                         } else if (selector.checked) {
@@ -1002,14 +988,12 @@ ${thumbHtml}
 <span>${Number(folder.item_count || 0)} 个项目</span>
 </div>
 </div>
-<div class="media-library-file-col type">文件夹</div>
+<div class="media-library-file-col date">-</div>
 <div class="media-library-file-col size">-</div>
-<div class="media-library-file-col date">${Number(folder.item_count || 0)} 项</div>
+<div class="media-library-file-col type">文件夹</div>
 `;
             row.addEventListener('click', () => {
                 mediaLibraryState.selectedItems.clear();
-                mediaLibraryState.activeItem = null;
-                updateMediaDetails(null);
                 renderMediaLibrarySelection();
             });
             row.addEventListener('dblclick', () => {
@@ -1039,12 +1023,11 @@ ${thumbHtml}
 ${iconHtml}
 <div class="media-library-row-name">
 <strong title="${escapeHtmlAttr(file.original_name || file.name || '')}">${escapeHtmlAttr(file.original_name || file.name || '')}</strong>
-<span>存储名：${escapeHtmlAttr(file.storage_name || '')}</span>
 </div>
 </div>
-<div class="media-library-file-col type">${file.type === 'video' ? '视频' : '图片'}</div>
-<div class="media-library-file-col size">${escapeHtmlAttr(file.size_formatted || '')}</div>
 <div class="media-library-file-col date">${escapeHtmlAttr(file.date || '')}</div>
+<div class="media-library-file-col size">${escapeHtmlAttr(file.size_formatted || '')}</div>
+<div class="media-library-file-col type">${file.type === 'video' ? '视频' : (file.type === 'image' ? '图片' : '文件')}</div>
 `;
 
             element.addEventListener('click', () => {
@@ -1061,8 +1044,6 @@ ${iconHtml}
                 });
                 selector.addEventListener('change', (event) => {
                     event.stopPropagation();
-                    mediaLibraryState.activeItem = file;
-                    updateMediaDetails(file);
                     if (!mediaLibraryState.multi) {
                         mediaLibraryState.selectedItems = selector.checked ? new Map([[file.public_path, file]]) : new Map();
                     } else if (selector.checked) {
@@ -1143,7 +1124,6 @@ ${iconHtml}
 <p class="mt-3">${escapeHtmlAttr(err.message || '加载失败')}</p>
 </div>
 `;
-            updateMediaDetails(null);
         }
     }
 
@@ -1192,7 +1172,6 @@ ${iconHtml}
         mediaLibraryState.search = '';
         mediaLibraryState.type = options.type || 'image';
         mediaLibraryState.sort = options.sort || 'date_desc';
-        mediaLibraryState.activeItem = null;
         mediaLibraryState.selectedItems = new Map();
         mediaLibraryState.currentStats = {
             item_count: 0,
@@ -1208,7 +1187,6 @@ ${iconHtml}
         const modal = document.getElementById('media-library-modal');
         const searchInput = document.getElementById('media-library-search');
         const typeFilter = document.getElementById('media-library-type-filter');
-        const sortFilter = document.getElementById('media-library-sort-filter');
         const confirmBtn = document.getElementById('confirm-media-selection');
         const uploadInput = document.getElementById('media-upload-input');
 
@@ -1224,9 +1202,6 @@ ${iconHtml}
             typeFilter.disabled = !!mediaLibraryState.options.lockType;
             typeFilter.classList.toggle('cursor-not-allowed', !!mediaLibraryState.options.lockType);
             typeFilter.classList.toggle('opacity-60', !!mediaLibraryState.options.lockType);
-        }
-        if (sortFilter) {
-            sortFilter.value = mediaLibraryState.sort;
         }
         if (uploadInput) {
             uploadInput.accept = mediaLibraryState.type === 'image'
@@ -1544,34 +1519,10 @@ ${iconHtml}
             const files = Array.isArray(mediaLibraryState.lastPayload?.files) ? mediaLibraryState.lastPayload.files : [];
             if (this.checked) {
                 mediaLibraryState.selectedItems = new Map(files.map((item) => [item.public_path, item]));
-                if (!mediaLibraryState.activeItem && files[0]) {
-                    mediaLibraryState.activeItem = files[0];
-                    updateMediaDetails(files[0]);
-                }
             } else {
                 mediaLibraryState.selectedItems.clear();
-                mediaLibraryState.activeItem = null;
-                updateMediaDetails(null);
             }
             renderMediaLibrarySelection();
-        });
-
-        document.getElementById('media-details-copy-btn')?.addEventListener('click', () => {
-            const path = document.getElementById('media-details-path')?.value || '';
-            if (!path) {
-                return;
-            }
-            const fullUrl = toFullUrl(path);
-            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                navigator.clipboard.writeText(fullUrl).then(() => {
-                    renderLibraryStatus('路径已复制到剪贴板', 'success');
-                    window.setTimeout(() => renderLibraryStatus(''), 1600);
-                }).catch(() => {
-                    fallbackCopyText(fullUrl);
-                });
-            } else {
-                fallbackCopyText(fullUrl);
-            }
         });
 
         document.getElementById('media-library-search')?.addEventListener('input', function () {
@@ -1585,9 +1536,21 @@ ${iconHtml}
             fetchMediaLibrary();
         });
 
-        document.getElementById('media-library-sort-filter')?.addEventListener('change', function () {
-            mediaLibraryState.sort = this.value;
-            fetchMediaLibrary();
+        document.querySelectorAll('[data-media-library-sort]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const field = button.dataset.mediaLibrarySort || '';
+                if (!['name', 'date', 'size', 'type'].includes(field)) {
+                    return;
+                }
+
+                const ascending = `${field}_asc`;
+                const descending = `${field}_desc`;
+                mediaLibraryState.sort = mediaLibraryState.sort === ascending
+                    ? descending
+                    : (mediaLibraryState.sort === descending ? ascending : (field === 'date' ? descending : ascending));
+                updateMediaLibrarySortHeaders();
+                fetchMediaLibrary();
+            });
         });
 
         document.getElementById('media-library-back-btn')?.addEventListener('click', () => {
@@ -1753,8 +1716,6 @@ ${iconHtml}
                     throw new Error(payload?.data?.messages?.[0] || '删除失败');
                 }
                 mediaLibraryState.selectedItems.clear();
-                mediaLibraryState.activeItem = null;
-                updateMediaDetails(null);
                 renderLibraryStatus(payload?.data?.messages?.[0] || '删除成功', 'success');
                 fetchMediaLibrary();
             } catch (error) {
@@ -2423,36 +2384,113 @@ ${iconHtml}
         }
     }
 
-    function selectExplorerFile(file) {
-        currentExplorerFile = file || null;
-        document.querySelectorAll('.explorer-file-row').forEach((row) => {
-            row.classList.toggle('is-active', row.dataset.filePath === (file?.path || ''));
-        });
+    function setPageMediaPreviewText(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value || '-';
+        }
+    }
 
-        const empty = document.getElementById('explorerPreviewEmpty');
-        const panel = document.getElementById('explorerPreviewPanel');
-        const box = document.getElementById('explorerPreviewBox');
-        if (!empty || !panel || !box || !file) {
+    function closePageMediaPreviewModal(restoreFocus = true) {
+        const modal = document.getElementById('page-media-preview-modal');
+        if (!modal || modal.classList.contains('hidden')) {
             return;
         }
 
-        empty.classList.add('hidden');
-        panel.classList.remove('hidden');
+        modal.querySelector('video')?.pause();
+        const box = document.getElementById('page-media-preview-box');
+        if (box) {
+            box.replaceChildren();
+        }
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        document.documentElement.classList.remove('media-library-modal-open');
+        document.body.classList.remove('media-library-modal-open');
+        document.querySelectorAll('.explorer-file-row').forEach((row) => {
+            row.classList.remove('is-active');
+        });
+
+        const returnFocus = pageMediaPreviewReturnFocus;
+        pageMediaPreviewReturnFocus = null;
+        if (restoreFocus && returnFocus instanceof HTMLElement && returnFocus.isConnected) {
+            returnFocus.focus();
+        }
+    }
+
+    function openPageMediaPreviewModal(file, trigger = null) {
+        const modal = document.getElementById('page-media-preview-modal');
+        const box = document.getElementById('page-media-preview-box');
+        const pathInput = document.getElementById('page-media-preview-path');
+        if (!modal || !box || !pathInput || !file) {
+            return;
+        }
+
+        closePageMediaEditModal();
+        pageMediaPreviewReturnFocus = trigger instanceof HTMLElement
+            ? trigger
+            : (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+        document.querySelectorAll('.explorer-file-row').forEach((row) => {
+            row.classList.toggle('is-active', row.dataset.filePath === (file.path || ''));
+        });
 
         if (file.type === 'video') {
             box.innerHTML = `<video controls playsinline preload="metadata"><source src="${escapeHtmlAttr(file.url || '')}"></video>`;
+        } else if (file.type === 'image') {
+            box.innerHTML = `<img src="${escapeHtmlAttr(file.url || '')}" alt="${escapeHtmlAttr(file.title || file.name || '')}">`;
         } else {
-            box.innerHTML = `<img src="${escapeHtmlAttr(file.url || '')}" alt="">`;
+            box.innerHTML = '<span class="page-media-preview-file-icon" aria-hidden="true"><i class="fas fa-file"></i></span>';
         }
 
-        document.getElementById('explorerPreviewTitle').textContent = file.title || '-';
-        document.getElementById('explorerPreviewName').textContent = file.name || '';
-        document.getElementById('explorerPreviewStorage').textContent = file.storage_name || '';
-        document.getElementById('explorerPreviewType').textContent = file.type === 'video' ? '视频' : (file.type === 'image' ? '图片' : '文件');
-        document.getElementById('explorerPreviewDirectory').textContent = file.directory ? `/uploads/${file.directory}` : '/uploads';
-        document.getElementById('explorerPreviewSize').textContent = [file.size || '', file.dimensions || ''].filter(Boolean).join(' · ') || '-';
-        document.getElementById('explorerPreviewDate').textContent = file.date || '';
-        document.getElementById('explorerPreviewPath').value = file.path || '';
+        setPageMediaPreviewText('page-media-preview-subtitle', file.title || file.name || '媒体文件');
+        setPageMediaPreviewText('page-media-preview-title', file.title || '-');
+        setPageMediaPreviewText('page-media-preview-name', file.name || '-');
+        setPageMediaPreviewText('page-media-preview-storage', file.storage_name || '-');
+        setPageMediaPreviewText('page-media-preview-type', file.type === 'video' ? '视频' : (file.type === 'image' ? '图片' : '文件'));
+        setPageMediaPreviewText('page-media-preview-directory', file.directory ? `/uploads/${file.directory}` : '/uploads');
+        setPageMediaPreviewText('page-media-preview-size', [file.size || '', file.dimensions || ''].filter(Boolean).join(' · ') || '-');
+        setPageMediaPreviewText('page-media-preview-date', file.date || '-');
+        pathInput.value = file.path || '';
+
+        document.documentElement.classList.add('media-library-modal-open');
+        document.body.classList.add('media-library-modal-open');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.setAttribute('aria-hidden', 'false');
+        window.requestAnimationFrame(() => modal.querySelector('[data-media-preview-close]')?.focus());
+    }
+
+    function parseExplorerFileRow(row) {
+        try {
+            return JSON.parse(row.dataset.explorerFile || '{}');
+        } catch (error) {
+            console.warn('Invalid explorer file payload', error);
+            return null;
+        }
+    }
+
+    function trapFocusInsideModal(event, modal) {
+        if (event.key !== 'Tab') {
+            return;
+        }
+        const focusable = Array.from(modal.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter((element) => element instanceof HTMLElement && element.offsetParent !== null);
+        if (focusable.length === 0) {
+            event.preventDefault();
+            modal.focus();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
     }
 
     function closePageMediaEditModal() {
@@ -2478,6 +2516,7 @@ ${iconHtml}
             return;
         }
 
+        closePageMediaPreviewModal(false);
         pathInput.value = button.dataset.editPath || '';
         originalNameInput.value = button.dataset.editOriginalName || '';
         titleInput.value = button.dataset.editTitle || '';
@@ -2522,15 +2561,31 @@ ${iconHtml}
             return;
         }
 
+        const previewModal = document.getElementById('page-media-preview-modal');
+        const editModal = document.getElementById('page-media-edit-modal');
+        [previewModal, editModal].forEach((modal) => {
+            if (modal && modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+        });
+
         document.querySelectorAll('.explorer-file-row[data-explorer-file]').forEach((row) => {
             row.addEventListener('click', (event) => {
                 if (event.target.closest('.explorer-check-cell') || event.target.closest('.explorer-actions')) {
                     return;
                 }
-                try {
-                    selectExplorerFile(JSON.parse(row.dataset.explorerFile || '{}'));
-                } catch (error) {
-                    console.warn('Invalid explorer file payload', error);
+                const file = parseExplorerFileRow(row);
+                if (file) {
+                    openPageMediaPreviewModal(file, row.querySelector('.js-page-media-preview-btn'));
+                }
+            });
+
+            row.querySelector('.js-page-media-preview-btn')?.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const file = parseExplorerFileRow(row);
+                if (file) {
+                    openPageMediaPreviewModal(file, event.currentTarget);
                 }
             });
         });
@@ -2603,7 +2658,17 @@ ${iconHtml}
             });
         });
 
-        const editModal = document.getElementById('page-media-edit-modal');
+        if (previewModal) {
+            previewModal.querySelectorAll('[data-media-preview-close]').forEach((btn) => {
+                btn.addEventListener('click', closePageMediaPreviewModal);
+            });
+            previewModal.addEventListener('click', (event) => {
+                if (event.target === previewModal) {
+                    closePageMediaPreviewModal();
+                }
+            });
+        }
+
         if (editModal) {
             editModal.querySelectorAll('[data-media-edit-close]').forEach((btn) => {
                 btn.addEventListener('click', closePageMediaEditModal);
@@ -2613,12 +2678,21 @@ ${iconHtml}
                     closePageMediaEditModal();
                 }
             });
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && !editModal.classList.contains('hidden')) {
-                    closePageMediaEditModal();
-                }
-            });
         }
+
+        document.addEventListener('keydown', (event) => {
+            if (previewModal && !previewModal.classList.contains('hidden')) {
+                if (event.key === 'Escape') {
+                    closePageMediaPreviewModal();
+                    return;
+                }
+                trapFocusInsideModal(event, previewModal);
+                return;
+            }
+            if (event.key === 'Escape' && editModal && !editModal.classList.contains('hidden')) {
+                closePageMediaEditModal();
+            }
+        });
 
         setExplorerSelectedCount();
     }
@@ -2677,11 +2751,4 @@ ${iconHtml}
     window.openMediaLibrary = openMediaLibrary;
     window.openProductSelector = openProductSelector;
     window.copyMediaPath = copyMediaPath;
-    window.submitSingleMediaDelete = submitSingleMediaDelete;
-    window.submitPageBulkDelete = submitPageBulkDelete;
-    window.addMediaRow = addMediaRow;
-    window.openPageMediaEditModal = openPageMediaEditModal;
-    window.closePageMediaEditModal = closePageMediaEditModal;
-    window.selectMediaPreview = selectMediaPreview;
-    window.selectExplorerFile = selectExplorerFile;
 })();

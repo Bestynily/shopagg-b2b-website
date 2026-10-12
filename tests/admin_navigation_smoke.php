@@ -59,6 +59,14 @@ $admin = AdminNavigation::build('/legacy/orders', [$legacy], true);
 expect(section($admin, 'extensions') !== null, '旧菜单应自动进入扩展分组');
 expect((bool)(section($admin, 'extensions')['legacy'] ?? false), '旧 Slot 应显示在扩展分组');
 
+$_SESSION = ['admin_role' => 'staff', 'admin_permissions' => 'settings'];
+$settings = AdminNavigation::build('/cms/admin/settings-company');
+$systemItems = section($settings, 'system')['items'] ?? [];
+$companyItems = array_values(array_filter($systemItems, static fn(array $item): bool => ($item['id'] ?? '') === 'settings-company'));
+expect(count($companyItems) === 1, '公司资料应只保留一个导航入口');
+expect(($companyItems[0]['label'] ?? '') === '公司资料', '合并后导航应显示为公司资料');
+expect((bool)($companyItems[0]['active'] ?? false), '公司资料页应激活对应导航');
+
 $manifest = [
     'schema_version' => 1,
     'id' => 'navigation-test',

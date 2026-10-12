@@ -1084,7 +1084,7 @@ class MediaManager
     private function normalizeSortOption(string $sort): string
     {
         $sort = strtolower(trim($sort));
-        return in_array($sort, ['date_desc', 'date_asc', 'name_asc', 'name_desc', 'type_asc', 'type_desc'], true)
+        return in_array($sort, ['date_desc', 'date_asc', 'name_asc', 'name_desc', 'size_asc', 'size_desc', 'type_asc', 'type_desc'], true)
             ? $sort
             : 'date_desc';
     }
@@ -1092,12 +1092,14 @@ class MediaManager
     private function sortSql(string $sort): string
     {
         return match ($sort) {
-            'date_asc' => 'created_at ASC, id ASC',
+            'date_asc' => 'updated_at ASC, id ASC',
             'name_asc' => 'lower(original_name) ASC, lower(storage_name) ASC, id DESC',
             'name_desc' => 'lower(original_name) DESC, lower(storage_name) DESC, id DESC',
+            'size_asc' => 'size ASC, lower(original_name) ASC, id DESC',
+            'size_desc' => 'size DESC, lower(original_name) ASC, id DESC',
             'type_asc' => 'media_type ASC, lower(original_name) ASC, id DESC',
             'type_desc' => 'media_type DESC, lower(original_name) ASC, id DESC',
-            default => 'created_at DESC, id DESC',
+            default => 'updated_at DESC, id DESC',
         };
     }
 
