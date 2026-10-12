@@ -1408,27 +1408,50 @@ ${iconHtml}
                 hasSavedGroupState = false;
             }
         }
+
+        const groupIds = new Set(groups.map((group) => group.dataset.navGroup || '').filter(Boolean));
+        savedGroups = savedGroups.filter((id) => typeof id === 'string' && groupIds.has(id));
+        const activeGroup = groups.find((group) => group.dataset.active === 'true');
+        const activeGroupId = activeGroup?.dataset.navGroup || '';
+        const initialOpenGroupId = hasSavedGroupState
+            ? (savedGroups.includes(activeGroupId) ? activeGroupId : (savedGroups[0] || ''))
+            : activeGroupId;
+
+        const syncGroupAria = (group) => {
+            group.querySelector('summary')?.setAttribute('aria-expanded', group.open ? 'true' : 'false');
+        };
+
+        const persistOpenGroup = () => {
+            const openGroup = groups.find((group) => group.open);
+            const openGroupId = openGroup?.dataset.navGroup || '';
+            storage.set(groupsKey, JSON.stringify(openGroupId ? [openGroupId] : []));
+        };
+
         groups.forEach((group) => {
             const id = group.dataset.navGroup || '';
-            if (hasSavedGroupState) {
-                group.open = savedGroups.includes(id);
-            } else if (group.dataset.active === 'true') {
-                group.open = true;
-            }
+            group.open = id !== '' && id === initialOpenGroupId;
             const summary = group.querySelector('summary');
-            summary?.setAttribute('aria-expanded', group.open ? 'true' : 'false');
+            syncGroupAria(group);
 
             summary?.addEventListener('click', (event) => {
                 if (desktopQuery.matches && document.documentElement.classList.contains('admin-sidebar-collapsed')) {
                     event.preventDefault();
                     setDesktopCollapsed(false);
                     group.open = true;
-                    summary.setAttribute('aria-expanded', 'true');
+                    syncGroupAria(group);
                 }
             });
             group.addEventListener('toggle', () => {
-                summary?.setAttribute('aria-expanded', group.open ? 'true' : 'false');
-                storage.set(groupsKey, JSON.stringify(groups.filter((entry) => entry.open).map((entry) => entry.dataset.navGroup)));
+                if (group.open) {
+                    groups.forEach((otherGroup) => {
+                        if (otherGroup !== group && otherGroup.open) {
+                            otherGroup.open = false;
+                            syncGroupAria(otherGroup);
+                        }
+                    });
+                }
+                syncGroupAria(group);
+                persistOpenGroup();
             });
         });
 
