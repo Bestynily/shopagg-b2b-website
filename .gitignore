@@ -15,3 +15,6 @@ node_modules/
 .npm/
 .cache/
 *.map
+
+# Runtime-published plugin assets are rebuilt from installed plugin packages.
+assets/plugins/

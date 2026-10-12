@@ -8,4 +8,5 @@
 /tailwind.admin.config.js export-ignore
 /assets/admin/tailwind.input.css export-ignore
 /assets/admin/style.css export-ignore
+/assets/plugins export-ignore
 /tests export-ignore

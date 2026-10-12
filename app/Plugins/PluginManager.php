@@ -119,6 +119,7 @@ final class PluginManager {
         } catch (\Throwable $e) {
             $source = new SQLite3($backup, SQLITE3_OPEN_READONLY);
             try { $source->backup($this->db); } finally { $source->close(); }
+            $this->removeDirectory(APP_ROOT . '/assets/plugins/' . $pluginId . '/' . $version);
             $this->removeDirectory(APP_ROOT . '/uploads/plugins/' . $pluginId . '/' . $version);
             $this->rebuildCache();
             throw new \RuntimeException('插件启用失败，已恢复数据库：' . $e->getMessage(), 0, $e);
@@ -150,6 +151,7 @@ final class PluginManager {
             $this->invokeLifecycle($lifecycleManifest, 'uninstall', $this->standaloneContext($pluginId, $version, $base));
         }
         $this->removeDirectory(APP_ROOT . '/storage/plugins/' . $pluginId);
+        $this->removeDirectory(APP_ROOT . '/assets/plugins/' . $pluginId);
         $this->removeDirectory(APP_ROOT . '/uploads/plugins/' . $pluginId);
         if ($purgeData) {
             $prefix = 'p_' . str_replace('-', '_', $pluginId) . '_';
@@ -231,7 +233,8 @@ final class PluginManager {
             'zip' => class_exists(\ZipArchive::class),
             'curl' => function_exists('curl_init'),
             'storage_writable' => is_writable(APP_ROOT . '/storage'),
-            'uploads_writable' => is_writable(APP_ROOT . '/uploads')
+            'uploads_writable' => is_writable(APP_ROOT . '/uploads'),
+            'plugin_assets_writable' => is_writable(APP_ROOT . '/assets')
         ];
     }
 
@@ -461,7 +464,7 @@ final class PluginManager {
     private function publishAssets(string $id, string $version, string $base, array $manifest): void {
         $source = $base . '/assets';
         if (!is_dir($source)) return;
-        $destination = APP_ROOT . '/uploads/plugins/' . $id . '/' . $version;
+        $destination = APP_ROOT . '/assets/plugins/' . $id . '/' . $version;
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $file) {
             if (!$file->isFile() || !in_array(strtolower($file->getExtension()), self::ALLOWED_ASSET_EXTENSIONS, true)) continue;
