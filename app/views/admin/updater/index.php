@@ -156,6 +156,19 @@ $migrationStats = $migrationStatus['status'] ?? ['total' => 0, 'executed' => 0, 
 </div>
 <?php endif; ?>
 
+<div class="p-2 text-md">
+    <p class="mb-6">
+    项目原名 SHOPAGG B2B Website，现正式更名为  <a class="text-blue-600 hover:underline" target="_blank" href="https://www.shopagg.org/">灯塔CMS</a>（英文名 Lighthouse CMS）。灯塔 CMS 由 <a class="text-blue-600 hover:underline" target="_blank" href="https://www.shopagg.com/">SHOPAGG</a> 开源，面向中国工厂与外贸公司，帮助企业建立和管理自己的 B2B 外贸官网。
+</p>
+
+<p class="mb-6">
+    此次更名仅涉及项目品牌。现有 GitHub 仓库地址、演示地址、shopagg 命令行工具及 ShopAgg 插件市场名称仍沿用原有标识；文档中的这些名称均指向当前实际可用的地址、命令或服务。
+</p>
+
+</div>
+
+
+
 <!-- 标签页导航 -->
 <div class="mb-6 border-b border-slate-200">
     <nav class="flex gap-1" aria-label="Tabs">
