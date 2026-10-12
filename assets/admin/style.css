@@ -1481,12 +1481,19 @@ video {
     border-radius: .75rem;
 }
 
-.admin-sidebar-brand img {
+.admin-sidebar-brand-logo {
     width: auto;
     max-width: 174px;
     height: 35px;
     object-fit: contain;
     object-position: left center;
+}
+
+.admin-sidebar-brand-icon {
+    display: none;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 .admin-sidebar-close {
@@ -1554,7 +1561,7 @@ video {
     display: grid;
     gap: .12rem;
     margin: .15rem 0 .45rem;
-    padding-left: 2.8rem;
+    padding-left: 1.6rem;
 }
 
 .admin-sidebar-item {
@@ -1596,7 +1603,7 @@ video {
 
 .admin-legacy-navigation a:hover { background: #f8fafc; color: #1e293b; }
 .admin-sidebar-footer { padding: .75rem 1rem max(.75rem, env(safe-area-inset-bottom)); border-top: 1px solid #eef2f7; }
-.admin-sidebar-version { display: block; overflow: hidden; color: #94a3b8; font-size: .68rem; white-space: nowrap; }
+.admin-sidebar-version { display: block; overflow: hidden; color: #94a3b8; font-size: .68rem; white-space: nowrap; text-align: center;}
 
 .admin-topbar {
     position: sticky;
@@ -1648,7 +1655,8 @@ body > .admin-main { width: auto; }
 @media (min-width: 1024px) {
     html.admin-sidebar-collapsed .admin-sidebar { width: var(--admin-sidebar-collapsed-width); }
     html.admin-sidebar-collapsed .admin-sidebar-header { justify-content: center; padding-inline: .75rem; }
-    html.admin-sidebar-collapsed .admin-sidebar-brand img { width: 40px; max-width: 40px; object-position: center; }
+    html.admin-sidebar-collapsed .admin-sidebar-brand-logo { display: none; }
+    html.admin-sidebar-collapsed .admin-sidebar-brand-icon { display: block; }
     html.admin-sidebar-collapsed .admin-nav-label,
     html.admin-sidebar-collapsed .admin-nav-chevron,
     html.admin-sidebar-collapsed .admin-sidebar-items,

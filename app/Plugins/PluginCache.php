@@ -33,6 +33,13 @@ final class PluginCache {
         $cache = self::empty();
         foreach ($this->sortDependencies($plugins) as $row) {
             $m = $row['manifest'];
+            // Older registry rows may predate manifest normalization and only
+            // contain `provides_services`. Treat it as the compatibility alias
+            // of `services` while rebuilding so enabled providers remain
+            // discoverable without requiring a reinstall.
+            $providedServices = is_array($m['provides_services'] ?? null) ? $m['provides_services'] : [];
+            $declaredServices = is_array($m['services'] ?? null) ? $m['services'] : [];
+            $m['services'] = array_replace($providedServices, $declaredServices);
             $id = (string)$m['id'];
             $version = (string)$row['active_version'];
             $base = APP_ROOT . '/storage/plugins/' . $id . '/' . $version;

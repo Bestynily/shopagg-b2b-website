@@ -81,7 +81,7 @@ $refreshQuery = http_build_query(array_filter([
                         <div class="flex flex-1 flex-col px-6 pb-6 pt-7">
                             <h3 class="line-clamp-2 text-xl font-bold leading-snug text-slate-900 group-hover:text-blue-600" title="<?= h($item['name']) ?>"><?= h($item['name']) ?></h3>
                             <p class="mt-2 text-sm text-slate-400"><?php if ($item['version']): ?>v<?= h($item['version']) ?> · <?php endif; ?><?= h($item['vendor']) ?></p>
-                            <div class="mt-5 min-h-[112px] flex-1">
+                            <div class="mt-5 max-h-[112px] flex-1">
                                 <p class="line-clamp-4 text-base leading-7 text-slate-600"><?= h($item['description'] ?: '暂无应用介绍') ?></p>
                                 <?php if ($item['installed']): ?><p class="mt-3 text-xs font-semibold <?= $item['needs_update'] ? 'text-amber-700' : 'text-emerald-700' ?>"><?= $item['needs_update'] ? '有可用更新' : '已安装' ?><?php if ($item['installed_version']): ?> · v<?= h($item['installed_version']) ?><?php endif; ?></p><?php endif; ?>
                             </div>

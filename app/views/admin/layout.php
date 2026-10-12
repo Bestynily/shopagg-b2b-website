@@ -43,7 +43,8 @@
         <aside class="admin-sidebar" id="adminSidebar" aria-label="后台导航" data-admin-sidebar>
             <div class="admin-sidebar-header">
                 <a class="admin-sidebar-brand" href="<?= url('/admin') ?>" aria-label="返回仪表盘">
-                    <img src="<?= url('/assets/admin/images/shopagg-logo.png') ?>" alt="Lighthouse CMS">
+                    <img class="admin-sidebar-brand-logo" src="<?= url('/assets/admin/images/shopagg-logo.png') ?>" alt="" aria-hidden="true">
+                    <img class="admin-sidebar-brand-icon" src="<?= url('/assets/admin/images/shopagg-icon.png') ?>" alt="" aria-hidden="true">
                 </a>
                 <a href="#" class="admin-sidebar-close" aria-label="关闭导航" data-sidebar-dismiss>
                     <i class="fas fa-xmark" aria-hidden="true"></i>
