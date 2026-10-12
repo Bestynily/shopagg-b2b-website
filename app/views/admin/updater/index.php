@@ -32,7 +32,7 @@ $migrationStats = $migrationStatus['status'] ?? ['total' => 0, 'executed' => 0, 
             <p class="mt-2 text-sm text-white/80">检查更新、下载并安装最新版本，查看更新历史。</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="<?= url('/admin/settings-updater') ?>" class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20">
+            <a href="<?= url('/admin/settings-updater') ?>" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white  shadow-s px-4 py-2 text-sm font-semibold">
                 <i class="fas fa-refresh"></i>
                 <span>刷新状态</span>
             </a>

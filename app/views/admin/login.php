@@ -5,7 +5,7 @@
                 <i class="fas fa-rocket"></i>
             </div>
             <h1>灯塔 CMS</h1>
-            <p>Lighthouse CMS · 面向中国工厂与外贸公司的开源B2B官网系统</p>
+            <p>Lighthouse CMS · 简洁易用的外贸网站管理系统</p>
         </div>
 
         <form method="post" action="<?= url('/admin/login'); ?>" class="login-form">

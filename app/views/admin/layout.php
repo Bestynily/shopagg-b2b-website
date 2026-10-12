@@ -94,7 +94,7 @@
                     <i class="fas fa-bars" aria-hidden="true"></i>
                 </a>
                 <div class="admin-topbar-title">
-                    <span>后台管理</span>
+                    <span>灯塔CMS 管理后台</span>
                     <strong><?= h($title) ?></strong>
                 </div>
             </div>
