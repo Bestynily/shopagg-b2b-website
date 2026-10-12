@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= h($title) ?></title>
+    <title><?= h($title) ?> - Lighthouse CMS 管理后台</title>
     <script src="<?= url('/assets/admin/base.js').'?v='.APP_VERSION ?>"></script>
     <link rel="stylesheet" href="<?= url('/assets/admin/tailwind.min.css').'?v='.APP_VERSION ?>">
     <link rel="stylesheet" href="<?= url('/assets/admin/vendor/fontawesome/css/all.min.css').'?v=6.4.0' ?>">

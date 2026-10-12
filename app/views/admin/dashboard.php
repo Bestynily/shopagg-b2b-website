@@ -162,7 +162,7 @@
         </span>
         客户互动
     </div>
-    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div class="">
             <div class="stat-card danger">
                 <div class="stat-icon danger">
