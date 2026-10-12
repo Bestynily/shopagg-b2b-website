@@ -4,12 +4,12 @@
             <div class="icon-wrap">
                 <i class="fas fa-rocket"></i>
             </div>
-            <h1>SHOPAGG Admin</h1>
-            <p>欢迎回来，请登录您的账户</p>
+            <h1>灯塔 CMS</h1>
+            <p>Lighthouse CMS · 面向中国工厂与外贸公司的开源B2B官网系统</p>
         </div>
 
         <form method="post" action="<?= url('/admin/login'); ?>" class="login-form">
-            <div class="space-y-5">
+            <div class="space-y-5 mb-2">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">用户名</label>
                     <div class="relative">
@@ -35,11 +35,15 @@
             </button>
         </form>
 
+        
+
         <div class="login-footer">
             <a href="<?= url('/') ?>">
                 <span class="inline-flex h-5 w-5 items-center justify-center"><i class="fas fa-arrow-left"></i></span>
                 返回网站首页
             </a>
         </div>
+
+        
     </div>
 </div>
