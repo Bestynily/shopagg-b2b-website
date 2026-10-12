@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= h($title) ?></title>
     <script src="<?= url('/assets/admin/base.js').'?v='.APP_VERSION ?>"></script>
-    <script src="//cdn.tailwindcss.com/3.4.17" referrerpolicy="no-referrer"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jodit@4.13.5/es2021/jodit.fat.min.css" integrity="sha384-z1CAdjZT0Ot4X7eoNzGTz5RCl/Gp9y6nEqBwAJVdhr+B/kFJy+M9TIbEmgy9V2L9" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="<?= url('/assets/admin/tailwind.min.css').'?v='.APP_VERSION ?>">
+    <link rel="stylesheet" href="<?= url('/assets/admin/vendor/fontawesome/css/all.min.css').'?v=6.4.0' ?>">
+    <link rel="stylesheet" href="<?= url('/assets/admin/vendor/jodit/jodit.fat.min.css').'?v=4.13.5' ?>">
     <link rel="stylesheet" href="<?= url('/assets/admin/rich-content.css').'?v='.APP_VERSION ?>">
-    <link rel="stylesheet" href="<?= url('/assets/admin/style.css').'?v='.APP_VERSION ?>">
+    <link rel="stylesheet" href="<?= url('/assets/admin/style.min.css').'?v='.APP_VERSION ?>">
     <?php if (($showNav ?? true) && class_exists(\App\Plugins\PluginRuntime::class)): ?>
         <?= \App\Plugins\PluginRuntime::instance()->adminAssetTags('head') ?>
     <?php endif; ?>
@@ -25,7 +25,7 @@
             })();
         </script>
     <?php endif; ?>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js" integrity="sha384-DgmC6Xe2bSN2WjTDXzWYbUbxyhNP+NNkGDR/g78pCXV7E7rcVTGxVg0uIVCUUcBc" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="<?= url('/assets/admin/vendor/sortable/Sortable.min.js').'?v=1.15.7' ?>"></script>
 </head>
 
 <body class="<?= ($showNav ?? true) ? 'min-h-screen bg-slate-100 text-slate-800' : 'login-page' ?>">
@@ -368,7 +368,7 @@
         </div>
     </div>
 
-    <footer class="footer bg-white py-6 border-t border-gray-200">
+    <footer class="footer bg-white py-2 border-t border-gray-200">
         <div class="container text-center">
             <p class="text-md text-slate-500">
                 Powered by <a href="https://www.shopagg.com" target="_blank" class="text-indigo-500 hover:text-indigo-600 italic font-bold">SHOPAGG</a> v<?= APP_VERSION ?>
@@ -379,7 +379,7 @@
     <?php if (($showNav ?? true) && class_exists(\App\Plugins\PluginRuntime::class)): ?>
         <?= \App\Plugins\PluginRuntime::instance()->adminAssetTags('footer') ?>
     <?php endif; ?>
-    <script src="https://cdn.jsdelivr.net/npm/jodit@4.13.5/es2021/jodit.fat.min.js" integrity="sha384-IccFe3rXbed180gRH7yBTP+/cUVVxY0TImIHZ2IPflDaaEY1YoCOVTSZ8a63Sr9J" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="<?= url('/assets/admin/vendor/jodit/jodit.fat.min.js').'?v=4.13.5' ?>"></script>
 </body>
 
 </html>

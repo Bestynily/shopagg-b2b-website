@@ -3722,6 +3722,42 @@ body:not(.login-page) .border-slate-100 {
 body.login-page {
     background: var(--admin-canvas-subtle) !important;
     color: var(--admin-fg-default);
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* The shared admin shell still wraps the signed-out page. Remove the sidebar
+ * offset and let each wrapper participate in one full-viewport flex layout so
+ * the card is centered against the viewport instead of the content column. */
+body.login-page > .admin-main {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin-left: 0;
+}
+
+body.login-page > .admin-main > .admin-content-section,
+body.login-page > .admin-main > .admin-content-section > .container {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0 !important;
+}
+
+body.login-page .login-container {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    padding: clamp(1rem, 4vw, 2rem);
+}
+
+body.login-page > .footer {
+    display: none;
 }
 
 .login-card {
@@ -3729,6 +3765,7 @@ body.login-page {
     border-radius: var(--admin-radius-medium);
     background: var(--admin-canvas-default);
     box-shadow: var(--admin-shadow-floating);
+    margin: auto;
 }
 
 .login-logo .icon-wrap {

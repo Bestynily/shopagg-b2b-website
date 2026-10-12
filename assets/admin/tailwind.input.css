@@ -1,0 +1,4 @@
+/* Development source only. Run `npm run build:admin-css` after changing admin utility classes. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

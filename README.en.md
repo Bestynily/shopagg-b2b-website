@@ -247,11 +247,12 @@ server {
 | **Backend** | PHP 8.1+ | Plain PHP; no framework dependency |
 | **Database** | SQLite3 | File-based database in WAL mode |
 | **Architecture** | MVC | PSR-4 autoloading |
-| **Frontend CSS** | Tailwind CSS | CDN JIT mode; no build step |
-| **Icons** | Font Awesome 6 | Loaded from a CDN |
-| **Rich text** | Jodit Editor | Admin content editor |
+| **Admin CSS** | Tailwind CSS + native CSS | Locally precompiled; deployment does not require Node.js or the Tailwind CDN |
+| **Default frontend theme CSS** | Tailwind CSS | The theme loads the CDN independently when needed |
+| **Icons** | Font Awesome 6 | Local admin assets |
+| **Rich text** | Jodit Editor | Local admin assets |
 | **Sliders** | Swiper.js 11 | Loaded when needed |
-| **Drag-and-drop** | SortableJS | Menu sorting |
+| **Drag-and-drop** | SortableJS | Local admin assets |
 
 ### System diagram
 
@@ -349,6 +350,19 @@ Developer reading docs are listed under 灯塔CMS in the workspace [document ind
 | [Theme development guide](../Documents/灯塔CMS/模板开发.md) | Theme conventions, template variables, helpers, and blocks (Chinese) |
 | [Plugin development guide](../Documents/灯塔CMS/插件开发.md) | Plugin development (Chinese) |
 | [Plugin specification](../Documents/灯塔CMS/插件规范.md) | Plugin specification for AI-assisted development |
+
+### Building admin styles
+
+Release archives include the compiled `assets/admin/tailwind.min.css` and `assets/admin/style.min.css`, so production deployment does not require Node.js and the admin does not download Tailwind from a CDN. Developers need the build tool after changing Tailwind utility classes in admin templates or `assets/admin/base.js`, or after editing `assets/admin/style.css`:
+
+```bash
+npm ci
+npm run build:admin-css
+```
+
+Commit both regenerated `.min.css` files. The maintainable `assets/admin/style.css` remains in the Git repository, but it is excluded from GitHub's automatically generated release archives together with `node_modules`, build caches, source maps, and the admin CSS build configuration. Plugin admin pages that require custom styles should declare their own CSS in the plugin Manifest `assets`; the core build does not scan plugins installed at runtime.
+
+Font Awesome 6.4.0, Jodit 4.13.5, and SortableJS 1.15.7 are pinned under `assets/admin/vendor/`, so the admin does not contact their third-party CDNs at runtime. When upgrading, replace both the assets and their license files. Font Awesome includes only the WOFF2 fonts used by modern browsers to keep release archives small.
 
 ### Theme development conventions
 

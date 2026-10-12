@@ -247,11 +247,12 @@ server {
 | **后端** | PHP 8.1+ | 纯 PHP，无框架依赖 |
 | **数据库** | SQLite3 | 文件数据库，WAL 模式 |
 | **架构** | MVC | PSR-4 自动加载 |
-| **前端 CSS** | Tailwind CSS | CDN JIT 模式，无需构建 |
-| **图标** | Font Awesome 6 | CDN 引入 |
-| **富文本** | Jodit Editor | 后台内容编辑器 |
+| **后台 CSS** | Tailwind CSS + 原生 CSS | 本地预编译，部署时不依赖 Node.js 或 Tailwind CDN |
+| **默认前台主题 CSS** | Tailwind CSS | 主题独立按需加载 CDN |
+| **图标** | Font Awesome 6 | 后台本地静态资源 |
+| **富文本** | Jodit Editor | 后台本地静态资源 |
 | **轮播** | Swiper.js 11 | 按需加载 |
-| **拖拽排序** | SortableJS | 菜单排序 |
+| **拖拽排序** | SortableJS | 后台本地静态资源 |
 
 ### 系统架构图
 
@@ -368,6 +369,19 @@ server {
 |------|------|
 | [系统架构](../Documents/灯塔CMS/系统架构.md) | 分层架构、核心模块详解、数据库设计、安全架构 |
 | [模板开发](../Documents/灯塔CMS/模板开发.md) | 主题开发规范、模板变量参考、辅助函数 API、区块系统 |
+
+### 后台样式构建
+
+正式发行包已经包含 `assets/admin/tailwind.min.css` 和 `assets/admin/style.min.css`，部署和运行网站不需要 Node.js，也不会下载 Tailwind CDN。修改后台模板、`assets/admin/base.js` 中的 Tailwind 工具类或 `assets/admin/style.css` 后，开发者需要执行：
+
+```bash
+npm ci
+npm run build:admin-css
+```
+
+请提交重新生成的两份 `.min.css`。可维护的 `assets/admin/style.css` 保留在 Git 仓库中，但与 `node_modules`、构建缓存、源码映射及后台 CSS 构建配置一样，不进入 GitHub 自动生成的 Release 归档。插件后台页面如需自定义样式，应在插件 Manifest 的 `assets` 中声明插件自己的 CSS，核心构建不会扫描运行时安装的插件。
+
+后台使用的 Font Awesome 6.4.0、Jodit 4.13.5 和 SortableJS 1.15.7 固定保存在 `assets/admin/vendor/`，部署时不访问第三方 CDN。升级版本时应同时替换资源与各自的许可证文件；Font Awesome 仅携带现代浏览器使用的 WOFF2 字体，以控制发行包体积。
 
 ### 主题开发约定
 

@@ -8,3 +8,10 @@ extensions/*
 themes/*
 !themes/default/
 Documents/
+
+# Local frontend build dependencies and caches. The release only ships the
+# compiled assets under assets/admin/.
+node_modules/
+.npm/
+.cache/
+*.map

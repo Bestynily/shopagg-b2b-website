@@ -1,0 +1,13 @@
+{
+  "name": "lighthouse-cms-admin-assets",
+  "private": true,
+  "scripts": {
+    "build:admin-css": "npm run build:admin-tailwind && npm run build:admin-style",
+    "build:admin-tailwind": "tailwindcss -c tailwind.admin.config.js -i ./assets/admin/tailwind.input.css -o ./assets/admin/tailwind.min.css --minify",
+    "build:admin-style": "tailwindcss -c tailwind.admin.config.js -i ./assets/admin/style.css -o ./assets/admin/style.min.css --minify",
+    "watch:admin-tailwind": "tailwindcss -c tailwind.admin.config.js -i ./assets/admin/tailwind.input.css -o ./assets/admin/tailwind.min.css --minify --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}
